@@ -87,9 +87,11 @@
 
 #define CHECK_STRING_LENGTH(l,s) if (l+2+strlen(s) > MQTT_MAX_PACKET_SIZE) {_client->stop();return false;}
 
-struct onEventStruct {
+class onEventStruct {
+public:
 	char * topic;
-	bool hasHash, hasLevelWildcard;
+	uint16_t hasHash;
+	bool hasLevelWildcard;
 	uint8_t qos;
 	MQTT_ONEVENT_SIGNATURE;
 //	void (*callback)(char*, uint8_t*, unsigned int);

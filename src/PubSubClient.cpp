@@ -409,12 +409,12 @@ boolean PubSubClient::loop() {
             }
         }
 		if (onEventPendingList) {
-			char s[1+MQTT_MAX_PACKET_SIZE];
-			strcpy(s, onEventPendingList->topic);
-			if (onEventPendingList->hasHash)
-				strcat(s, "#");
-			if (subscribe(s, onEventPendingList->qos)) {
-				onEventStruct *newEvent = onEventPendingList;
+			onEventStruct *newEvent = onEventPendingList;
+//			char s[1+MQTT_MAX_PACKET_SIZE];
+//			strcpy(s, onEventPendingList->topic);
+			if (newEvent->hasHash)
+				strcat(newEvent->topic, "#");
+			if (subscribe(newEvent->topic, onEventPendingList->qos)) {
 				onEventPendingList = newEvent->next;
 				newEvent->next = NULL;
 				onEventStruct *prev = onEventList;
@@ -426,6 +426,8 @@ boolean PubSubClient::loop() {
 				else
 					onEventList = newEvent;
 			}
+			if (newEvent->hasHash)
+				newEvent->topic[newEvent->hasHash - 1] = 0;	
 		}
         return true;
     }
@@ -726,56 +728,39 @@ onEventStruct *newEvent;
 		return rc;
 	if (0 == strlen(topic))
 		return rc;
-	newEvent = (onEventStruct *)malloc(sizeof(onEventStruct));
+//	newEvent = (onEventStruct *)malloc(sizeof(onEventStruct));
+	newEvent = new onEventStruct();
 	Serial.print("Malloc for onEventStruct size=");Serial.println(sizeof(onEventStruct));
 	Serial.print("Starte Anlage on-Event für topic: ");Serial.println(topic);
 	if (newEvent) {
-		memset(newEvent, 0, sizeof(onEventStruct));
+//		memset(newEvent, 0, sizeof(onEventStruct));
 		Serial.println("New Event allokiert!");
 		if (NULL == (newEvent->topic = strdup(topic)))
-			free(newEvent);
-		else
-			{
+//			free(newEvent);
+			delete newEvent;
+		else {
 			char *hashPos = strchr(newEvent->topic, '#');
 			Serial.println("Topic for New Event allokiert!");
-			if (newEvent->hasHash = (hashPos != NULL))
-				*hashPos = 0;
+			if (hashPos != NULL) {
+				newEvent->hasHash = 1 + hashPos - newEvent->topic; 
+				newEvent->topic[newEvent->hasHash-1] = 0;
+			}
+			else
+				newEvent->hasHash = 0;
 			newEvent->hasLevelWildcard = strchr(newEvent->topic, '+') != NULL;
 			rc = true;
 			newEvent->callback = callback;		
 			newEvent->qos = qos;
 			newEvent->next = NULL;
 			Serial.println("Attribute for New Event gesetzt!");
-			}
-		if (rc) 
-/* 			
-			if (connected()) {
-				Serial.println("PubSubClient connected, adding Event direct to subsrcription!");
-				onEventStruct *prev = onEventList;
-				Serial.print("onEventList=");
-				if (NULL == prev) Serial.println("NULL"); else Serial.println("already set!!!");	
-					
-				newEvent->next = NULL;
-				while (prev && prev->next)
-					prev = prev->next;
-				if (prev)
-					prev->next = newEvent;
-				else
-					onEventList = newEvent;
-				Serial.print("vor subscribe: ");Serial.println(newEvent->topic);
-				subscribe(newEvent->topic, newEvent->qos);
-			}			
+			onEventStruct *prev = onEventPendingList;
+			Serial.println("Adding Event direct to pendingList!");
+			while (prev && prev->next)
+				prev = prev->next;
+			if (prev)
+				prev->next = newEvent;
 			else
-*/				
-			    {
-				onEventStruct *prev = onEventPendingList;
-				Serial.println("Adding Event direct to pendingList!");
-				while (prev && prev->next)
-					prev = prev->next;
-				if (prev)
-					prev->next = newEvent;
-				else
-					onEventPendingList = newEvent;
+				onEventPendingList = newEvent;
 			}
 				
 	}
