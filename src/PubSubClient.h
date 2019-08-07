@@ -83,7 +83,9 @@
 #define MQTT_CALLBACK_SIGNATURE void (*callback)(char*, uint8_t*, unsigned int)
 #endif
 
-#define MQTT_ONEVENT_SIGNATURE void (*callback)(char*, uint8_t*, unsigned int)
+//#define MQTT_ONEVENT_SIGNATURE void (*callback)(char*, uint8_t*, unsigned int)
+//#define MQTT_ONEVENT_SIGNATURE MQTT_CALLBACK_SIGNATURE
+
 
 #define CHECK_STRING_LENGTH(l,s) if (l+2+strlen(s) > MQTT_MAX_PACKET_SIZE) {_client->stop();return false;}
 
@@ -93,7 +95,7 @@ public:
 	uint16_t hasHash;
 	bool hasLevelWildcard;
 	uint8_t qos;
-	MQTT_ONEVENT_SIGNATURE;
+	MQTT_CALLBACK_SIGNATURE;
 //	void (*callback)(char*, uint8_t*, unsigned int);
 	onEventStruct *next;
 };
@@ -183,7 +185,7 @@ public:
    boolean loop();
    boolean connected();
    int state();
-   boolean on(const char* topic, MQTT_ONEVENT_SIGNATURE /*void (*callback)(char*, uint8_t*, unsigned int)*/, uint8_t qos = 0);
+   boolean on(const char* topic, MQTT_CALLBACK_SIGNATURE /*void (*callback)(char*, uint8_t*, unsigned int)*/, uint8_t qos = 0);
 protected:
    onEventStruct *getOnEvent(const char *topic);
 };
