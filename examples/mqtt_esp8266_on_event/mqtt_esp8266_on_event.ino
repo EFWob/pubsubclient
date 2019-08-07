@@ -5,8 +5,12 @@
  with the ESP8266 board/library.
 
  It connects to an MQTT server then:
-   --> search for setup() below!
- 
+  - publishes "hello world" to the topic "myTopic" every two seconds
+  - subscribes to the topic "inTopic", printing out any messages
+    it receives. NB - it assumes the received payloads are strings not binary
+  - If the first character of the topic "inTopic" is an 1, switch ON the ESP Led,
+    else switch it off
+
  It will reconnect to the server if the connection is lost using a blocking
  reconnect function. See the 'mqtt_reconnect_nonblocking' example for how to
  achieve the same result without blocking the main loop.
@@ -183,25 +187,34 @@ void setup() {
   // 'myTopic' stands for #define myTopic above
   //
   // if "'myTopic'/led" is received, use callbackLED1 (switches LED on/off if payload is precise '1'/'0'
+  
   client.on(myTopic "/led", callbackLED1); 
 
   // if "'myTopic'/led/switch/+" is received, use callbackLED2
   // if payload is empty, and topic is precise .../switch/1 or .../switch/0, LED will be switched accordingly
+
   client.on(myTopic "/led/switch/+", callbackLED2);
 
   // demo of using lambdas to directly switching LED on/off with "'myTopic'/led/1" or "'myTopic'/led/0"
+  
   client.on(myTopic "/led/1", [](char *topic, uint8_t* payload, int payloadLen) {digitalWrite(BUILTIN_LED, LOW);});
   client.on(myTopic "/led/0", [](char *topic, uint8_t* payload, int payloadLen) {digitalWrite(BUILTIN_LED, HIGH);});
 
   // note that on each match above the message is considered consumed. Even if the payload is not as expected.
   // that means, the following will never fire on any of the 'led' messages defined above. Only on any other message
   // starting with "'myTopic'/led"
+  
   client.on(myTopic "/led/#", callbackLEDother);
  
   // the following topic will disconnect the client. The main loop() below includes the reconnect attempt.
   // after a reconnect, the client will again re-subscribe automatically to all topics defined by "::on()" methods (in order).
+  
   client.on(myTopic "/restart", callbackRestart);
+
+  // garbage collection for "anything else"
+  
   client.on(myTopic "/#", callback);
+
 }
 
 void loop() {
