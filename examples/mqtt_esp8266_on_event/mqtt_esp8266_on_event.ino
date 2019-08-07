@@ -28,8 +28,8 @@
 
 // Update these with values suitable for your network.
 
-const char* ssid = "JonaWiz";
-const char* password = "Ich mag Nutella!";
+const char* ssid = ".........";
+const char* password = "............";
 const char* mqtt_server = "broker.mqtt-dashboard.com";
 
 #define myTopic "mqttOn"
