@@ -87,20 +87,20 @@
 
 #define CHECK_STRING_LENGTH(l,s) if (l+2+strlen(s) > MQTT_MAX_PACKET_SIZE) {_client->stop();return false;}
 
-struct onDescriptor {
+struct onEventStruct {
 	char * topic;
 	bool hasHash, hasLevelWildcard;
 	uint8_t qos;
 	MQTT_ONEVENT_SIGNATURE;
 //	void (*callback)(char*, uint8_t*, unsigned int);
-	onDescriptor *next;
+	onEventStruct *next;
 };
 	
 
 class PubSubClient : public Print {
 private:
-   onDescriptor *onDescriptorList;
-   onDescriptor *onPendingList;	
+   onEventStruct *onEventList;
+   onEventStruct *onEventPendingList;	
    Client* _client;  
    uint8_t buffer[MQTT_MAX_PACKET_SIZE];
    uint16_t nextMsgId;
@@ -183,7 +183,7 @@ public:
    int state();
    boolean on(const char* topic, MQTT_ONEVENT_SIGNATURE /*void (*callback)(char*, uint8_t*, unsigned int)*/, uint8_t qos = 0);
 protected:
-   onDescriptor *getOnEvent(const char *topic);
+   onEventStruct *getOnEvent(const char *topic);
 };
 
 
