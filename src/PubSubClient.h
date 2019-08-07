@@ -83,11 +83,25 @@
 #define MQTT_CALLBACK_SIGNATURE void (*callback)(char*, uint8_t*, unsigned int)
 #endif
 
+#define MQTT_ONEVENT_SIGNATURE void (*callback)(char*, uint8_t*, unsigned int)
+
 #define CHECK_STRING_LENGTH(l,s) if (l+2+strlen(s) > MQTT_MAX_PACKET_SIZE) {_client->stop();return false;}
+
+struct onDescriptor {
+	char * topic;
+	bool hasHash, hasLevelWildcard;
+	uint8_t qos;
+	MQTT_ONEVENT_SIGNATURE;
+//	void (*callback)(char*, uint8_t*, unsigned int);
+	onDescriptor *next;
+};
+	
 
 class PubSubClient : public Print {
 private:
-   Client* _client;
+   onDescriptor *onDescriptorList;
+   onDescriptor *onPendingList;	
+   Client* _client;  
    uint8_t buffer[MQTT_MAX_PACKET_SIZE];
    uint16_t nextMsgId;
    unsigned long lastOutActivity;
@@ -167,6 +181,9 @@ public:
    boolean loop();
    boolean connected();
    int state();
+   boolean on(const char* topic, MQTT_ONEVENT_SIGNATURE /*void (*callback)(char*, uint8_t*, unsigned int)*/, uint8_t qos = 0);
+protected:
+   onDescriptor *getOnEvent(const char *topic);
 };
 
 

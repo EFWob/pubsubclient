@@ -12,12 +12,16 @@ PubSubClient::PubSubClient() {
     this->_client = NULL;
     this->stream = NULL;
     setCallback(NULL);
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 
 PubSubClient::PubSubClient(Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setClient(client);
     this->stream = NULL;
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client) {
@@ -25,12 +29,16 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client) {
     setServer(addr, port);
     setClient(client);
     this->stream = NULL;
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(addr,port);
     setClient(client);
     setStream(stream);
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
@@ -38,6 +46,8 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATUR
     setCallback(callback);
     setClient(client);
     this->stream = NULL;
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
@@ -45,6 +55,8 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATUR
     setCallback(callback);
     setClient(client);
     setStream(stream);
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client) {
@@ -52,12 +64,16 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client) {
     setServer(ip, port);
     setClient(client);
     this->stream = NULL;
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(ip,port);
     setClient(client);
     setStream(stream);
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
@@ -65,6 +81,8 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, 
     setCallback(callback);
     setClient(client);
     this->stream = NULL;
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
@@ -72,6 +90,8 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, 
     setCallback(callback);
     setClient(client);
     setStream(stream);
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 
 PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client) {
@@ -79,12 +99,16 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client) {
     setServer(domain,port);
     setClient(client);
     this->stream = NULL;
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(domain,port);
     setClient(client);
     setStream(stream);
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
@@ -92,6 +116,8 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
     setCallback(callback);
     setClient(client);
     this->stream = NULL;
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
@@ -99,6 +125,8 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
     setCallback(callback);
     setClient(client);
     setStream(stream);
+	onDescriptorList = NULL;
+	onPendingList = NULL;
 }
 
 boolean PubSubClient::connect(const char *id) {
@@ -119,7 +147,19 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
 
 boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, boolean cleanSession) {
     if (!connected()) {
-        int result = 0;
+			{	
+			onDescriptor *prev = onDescriptorList;
+			if (prev) {                        // must have been connected before
+				if (onPendingList) {
+					while (prev->next != NULL)
+						prev = prev->next;
+					prev->next = onPendingList;
+				}
+				onPendingList = onDescriptorList;
+				onDescriptorList = NULL;
+				}
+			}
+		int result = 0;
 
         if (domain != NULL) {
             result = _client->connect(this->domain, this->port);
@@ -214,7 +254,7 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
             _state = MQTT_CONNECT_FAILED;
         }
         return false;
-    }
+    } 
     return true;
 }
 
@@ -325,27 +365,38 @@ boolean PubSubClient::loop() {
                 lastInActivity = t;
                 uint8_t type = buffer[0]&0xF0;
                 if (type == MQTTPUBLISH) {
-                    if (callback) {
+                    if (callback || onDescriptorList) {
                         uint16_t tl = (buffer[llen+1]<<8)+buffer[llen+2]; /* topic length in bytes */
                         memmove(buffer+llen+2,buffer+llen+3,tl); /* move topic inside buffer 1 byte to front */
                         buffer[llen+2+tl] = 0; /* end the topic as a 'C' string with \x00 */
                         char *topic = (char*) buffer+llen+2;
+						onDescriptor *onEvent = getOnEvent(topic);
+						if (onEvent) {Serial.print("OnEvent gefunden für Topic: ");Serial.println(topic);}
                         // msgId only present for QOS>0
                         if ((buffer[0]&0x06) == MQTTQOS1) {
                             msgId = (buffer[llen+3+tl]<<8)+buffer[llen+3+tl+1];
                             payload = buffer+llen+3+tl+2;
-                            callback(topic,payload,len-llen-3-tl-2);
-
-                            buffer[0] = MQTTPUBACK;
-                            buffer[1] = 2;
-                            buffer[2] = (msgId >> 8);
-                            buffer[3] = (msgId & 0xFF);
-                            _client->write(buffer,4);
-                            lastOutActivity = t;
-
+							if (onEvent)
+								onEvent->callback(topic,payload,len-llen-3-tl-2);
+							else if (callback)	
+								callback(topic,payload,len-llen-3-tl-2);
+							if (onEvent || callback) {
+								buffer[0] = MQTTPUBACK;
+								buffer[1] = 2;
+								buffer[2] = (msgId >> 8);
+								buffer[3] = (msgId & 0xFF);
+								_client->write(buffer,4);
+								lastOutActivity = t;
+							}	
+							
                         } else {
                             payload = buffer+llen+3+tl;
-                            callback(topic,payload,len-llen-3-tl);
+							if (onEvent) {
+								Serial.print("Calling OnEvent topic=");Serial.print(topic);Serial.print(" Payloadlen=");Serial.println(len-llen-3-tl);
+								onEvent->callback(topic,payload,len-llen-3-tl);
+								}
+							else if (callback)	
+								callback(topic,payload,len-llen-3-tl);
                         }
                     }
                 } else if (type == MQTTPINGREQ) {
@@ -355,15 +406,32 @@ boolean PubSubClient::loop() {
                 } else if (type == MQTTPINGRESP) {
                     pingOutstanding = false;
                 }
-            } else if (!connected()) {
-                // readPacket has closed the connection
-                return false;
             }
         }
+		if (onPendingList) {
+			char s[1+MQTT_MAX_PACKET_SIZE];
+			strcpy(s, onPendingList->topic);
+			if (onPendingList->hasHash)
+				strcat(s, "#");
+			if (subscribe(s, onPendingList->qos)) {
+				onDescriptor *newEvent = onPendingList;
+				onPendingList = newEvent->next;
+				newEvent->next = NULL;
+				onDescriptor *prev = onDescriptorList;
+				if (NULL != (prev = onDescriptorList)) {
+					while (NULL != prev->next)
+						prev = prev->next;
+					prev->next = newEvent;
+				}
+				else
+					onDescriptorList = newEvent;
+			}
+		}
         return true;
     }
     return false;
 }
+	
 
 boolean PubSubClient::publish(const char* topic, const char* payload) {
     return publish(topic,(const uint8_t*)payload,strlen(payload),false);
@@ -649,4 +717,110 @@ PubSubClient& PubSubClient::setStream(Stream& stream){
 
 int PubSubClient::state() {
     return this->_state;
+}
+
+boolean PubSubClient::on(const char* topic, MQTT_ONEVENT_SIGNATURE, uint8_t qos) {
+boolean rc = false;	
+onDescriptor *newEvent;
+	if ((NULL == callback) || (NULL == topic))
+		return rc;
+	if (0 == strlen(topic))
+		return rc;
+	newEvent = (onDescriptor *)malloc(sizeof(onDescriptor));
+	Serial.print("Malloc for onDescriptor size=");Serial.println(sizeof(onDescriptor));
+	Serial.print("Starte Anlage on-Event für topic: ");Serial.println(topic);
+	if (newEvent) {
+		memset(newEvent, 0, sizeof(onDescriptor));
+		Serial.println("New Event allokiert!");
+		if (NULL == (newEvent->topic = strdup(topic)))
+			free(newEvent);
+		else
+			{
+			char *hashPos = strchr(newEvent->topic, '#');
+			Serial.println("Topic for New Event allokiert!");
+			if (newEvent->hasHash = (hashPos != NULL))
+				*hashPos = 0;
+			newEvent->hasLevelWildcard = strchr(newEvent->topic, '+') != NULL;
+			rc = true;
+			newEvent->callback = callback;		
+			newEvent->qos = qos;
+			newEvent->next = NULL;
+			Serial.println("Attribute for New Event gesetzt!");
+			}
+		if (rc) 
+/* 			
+			if (connected()) {
+				Serial.println("PubSubClient connected, adding Event direct to subsrcription!");
+				onDescriptor *prev = onDescriptorList;
+				Serial.print("onDescriptorList=");
+				if (NULL == prev) Serial.println("NULL"); else Serial.println("already set!!!");	
+					
+				newEvent->next = NULL;
+				while (prev && prev->next)
+					prev = prev->next;
+				if (prev)
+					prev->next = newEvent;
+				else
+					onDescriptorList = newEvent;
+				Serial.print("vor subscribe: ");Serial.println(newEvent->topic);
+				subscribe(newEvent->topic, newEvent->qos);
+			}			
+			else
+*/				
+			    {
+				onDescriptor *prev = onPendingList;
+				Serial.println("Adding Event direct to pendingList!");
+				while (prev && prev->next)
+					prev = prev->next;
+				if (prev)
+					prev->next = newEvent;
+				else
+					onPendingList = newEvent;
+			}
+				
+	}
+	return rc;
+}
+
+boolean mqttTopicMatch(char *topic, onDescriptor *matchEvent) {
+char *value = topic;
+char *pattern = matchEvent->topic;
+
+  while (*value) {
+    if (*value != *pattern) {
+       if (0 == *pattern)
+        return matchEvent->hasHash;
+       if ('+' == *pattern) {
+        pattern++;
+        while ((0 != *value) && ('/' != *value))
+          value++;
+       }
+        else return false;
+    }
+    else {
+      value++;
+      pattern++;
+    } 
+  }
+  return (0 == *pattern);
+}
+
+onDescriptor *PubSubClient::getOnEvent(const char *topic) {
+onDescriptor *ret = onDescriptorList;
+		while (ret) {
+			Serial.print("Try match: ");Serial.print(topic);Serial.print(" with: ");Serial.println(ret->topic);
+			if (ret->hasLevelWildcard) {
+				if (mqttTopicMatch((char *)topic, ret))
+					return ret;
+			}
+			else if (ret->hasHash){
+				if (strstr(topic, ret->topic) == topic)
+					return ret;
+			}	
+			else if (0 == strcmp(topic, ret->topic))
+				return ret;
+			Serial.println("Match not found. May be next!?");
+			ret = ret->next;
+		}
+		return ret;		
 }

@@ -2,6 +2,9 @@
 
 This library provides a client for doing simple publish/subscribe messaging with
 a server that supports MQTT.
+Main addition is the method ::on(), which allows to link topics direct with a
+specific callback.
+Work in progress, not finished, no further documentation at this time.
 
 ## Examples
 
