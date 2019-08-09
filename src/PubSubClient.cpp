@@ -412,8 +412,11 @@ boolean PubSubClient::loop() {
 			onEventStruct *newEvent = onEventPendingList;
 //			char s[1+MQTT_MAX_PACKET_SIZE];
 //			strcpy(s, onEventPendingList->topic);
-			if (newEvent->hasHash)
-				strcat(newEvent->topic, "#");
+			if (newEvent->hasHash) 
+				if (newEvent->hasHash > 1)
+					strcat(newEvent->topic, "/#");
+				else	
+					strcat(newEvent->topic, "#");
 			if (subscribe(newEvent->topic, onEventPendingList->qos)) {
 				onEventPendingList = newEvent->next;
 				newEvent->next = NULL;
@@ -426,8 +429,11 @@ boolean PubSubClient::loop() {
 				else
 					onEventList = newEvent;
 			}
-			if (newEvent->hasHash)
-				newEvent->topic[newEvent->hasHash - 1] = 0;	
+			if (newEvent->hasHash) {
+				newEvent->topic[newEvent->hasHash-1] = 0;
+				if (newEvent->hasHash > 1)
+					newEvent->topic[newEvent->hasHash-2] = 0;
+				}
 		}
         return true;
     }
@@ -721,7 +727,7 @@ int PubSubClient::state() {
     return this->_state;
 }
 
-boolean PubSubClient::on(const char* topic, MQTT_ONEVENT_SIGNATURE, uint8_t qos) {
+boolean PubSubClient::on(const char* topic, MQTT_CALLBACK_SIGNATURE, uint8_t qos) {
 boolean rc = false;	
 onEventStruct *newEvent;
 	if ((NULL == callback) || (NULL == topic))
@@ -744,6 +750,8 @@ onEventStruct *newEvent;
 			if (hashPos != NULL) {
 				newEvent->hasHash = 1 + hashPos - newEvent->topic; 
 				newEvent->topic[newEvent->hasHash-1] = 0;
+				if (newEvent->hasHash > 1)
+					newEvent->topic[newEvent->hasHash-2] = 0;
 			}
 			else
 				newEvent->hasHash = 0;
