@@ -23,7 +23,7 @@
 
 // MQTT_MAX_PACKET_SIZE : Maximum packet size
 #ifndef MQTT_MAX_PACKET_SIZE
-#define MQTT_MAX_PACKET_SIZE 128
+#define MQTT_MAX_PACKET_SIZE 1024
 #endif
 
 // MQTT_KEEPALIVE : keepAlive interval in Seconds
@@ -89,22 +89,12 @@
 
 #define CHECK_STRING_LENGTH(l,s) if (l+2+strlen(s) > MQTT_MAX_PACKET_SIZE) {_client->stop();return false;}
 
-class onEventStruct {
-public:
-	char * topic;
-	uint16_t hasHash;
-	bool hasLevelWildcard;
-	uint8_t qos;
-	MQTT_CALLBACK_SIGNATURE;
-//	void (*callback)(char*, uint8_t*, unsigned int);
-	onEventStruct *next;
-};
-	
+class onEventStruct;
 
 class PubSubClient : public Print {
 private:
-   onEventStruct *onEventList;
-   onEventStruct *onEventPendingList;	
+   onEventStruct *onEventList = NULL;
+   onEventStruct *onEventPendingList = NULL;	
    Client* _client;  
    uint8_t buffer[MQTT_MAX_PACKET_SIZE];
    uint16_t nextMsgId;
@@ -186,8 +176,6 @@ public:
    boolean connected();
    int state();
    boolean on(const char* topic, MQTT_CALLBACK_SIGNATURE /*void (*callback)(char*, uint8_t*, unsigned int)*/, uint8_t qos = 0);
-protected:
-   onEventStruct *getOnEvent(const char *topic);
 };
 
 

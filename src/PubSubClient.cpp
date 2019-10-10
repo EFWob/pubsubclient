@@ -7,21 +7,31 @@
 #include "PubSubClient.h"
 #include "Arduino.h"
 
+class onEventStruct {
+public:
+	onEventStruct(char *t, MQTT_CALLBACK_SIGNATURE, uint8_t qos);
+	boolean topicMatch(char *value);
+	onEventStruct *getOnEvent(const char *topic);
+	char * topic;
+	uint16_t hasHash;
+	bool hasLevelWildcard;
+	uint8_t qos;
+	MQTT_CALLBACK_SIGNATURE;
+//	void (*callback)(char*, uint8_t*, unsigned int);
+	onEventStruct *next;
+};
+
 PubSubClient::PubSubClient() {
     this->_state = MQTT_DISCONNECTED;
     this->_client = NULL;
     this->stream = NULL;
     setCallback(NULL);
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 
 PubSubClient::PubSubClient(Client& client) {
     this->_state = MQTT_DISCONNECTED;
     setClient(client);
     this->stream = NULL;
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client) {
@@ -29,16 +39,12 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client) {
     setServer(addr, port);
     setClient(client);
     this->stream = NULL;
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(addr,port);
     setClient(client);
     setStream(stream);
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
@@ -46,8 +52,6 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATUR
     setCallback(callback);
     setClient(client);
     this->stream = NULL;
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
@@ -55,8 +59,6 @@ PubSubClient::PubSubClient(IPAddress addr, uint16_t port, MQTT_CALLBACK_SIGNATUR
     setCallback(callback);
     setClient(client);
     setStream(stream);
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client) {
@@ -64,16 +66,12 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client) {
     setServer(ip, port);
     setClient(client);
     this->stream = NULL;
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(ip,port);
     setClient(client);
     setStream(stream);
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
@@ -81,8 +79,6 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, 
     setCallback(callback);
     setClient(client);
     this->stream = NULL;
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
@@ -90,8 +86,6 @@ PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, MQTT_CALLBACK_SIGNATURE, 
     setCallback(callback);
     setClient(client);
     setStream(stream);
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 
 PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client) {
@@ -99,16 +93,12 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client) {
     setServer(domain,port);
     setClient(client);
     this->stream = NULL;
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(const char* domain, uint16_t port, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
     setServer(domain,port);
     setClient(client);
     setStream(stream);
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client) {
     this->_state = MQTT_DISCONNECTED;
@@ -116,8 +106,6 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
     setCallback(callback);
     setClient(client);
     this->stream = NULL;
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGNATURE, Client& client, Stream& stream) {
     this->_state = MQTT_DISCONNECTED;
@@ -125,8 +113,6 @@ PubSubClient::PubSubClient(const char* domain, uint16_t port, MQTT_CALLBACK_SIGN
     setCallback(callback);
     setClient(client);
     setStream(stream);
-	onEventList = NULL;
-	onEventPendingList = NULL;
 }
 
 boolean PubSubClient::connect(const char *id) {
@@ -147,6 +133,7 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
 
 boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, boolean cleanSession) {
     if (!connected()) {
+/*
 			{	
 			onEventStruct *prev = onEventList;
 			if (prev) {                        // must have been connected before
@@ -159,6 +146,7 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
 				onEventList = NULL;
 				}
 			}
+*/
 		int result = 0;
 
         if (domain != NULL) {
@@ -366,11 +354,13 @@ boolean PubSubClient::loop() {
                 uint8_t type = buffer[0]&0xF0;
                 if (type == MQTTPUBLISH) {
                     if (callback || onEventList) {
+						onEventStruct *onEvent = NULL;
                         uint16_t tl = (buffer[llen+1]<<8)+buffer[llen+2]; /* topic length in bytes */
                         memmove(buffer+llen+2,buffer+llen+3,tl); /* move topic inside buffer 1 byte to front */
                         buffer[llen+2+tl] = 0; /* end the topic as a 'C' string with \x00 */
                         char *topic = (char*) buffer+llen+2;
-						onEventStruct *onEvent = getOnEvent(topic);
+						if (onEventList)
+							onEvent = onEventList->getOnEvent(topic);
 						if (onEvent) {Serial.print("OnEvent gefunden für Topic: ");Serial.println(topic);}
                         // msgId only present for QOS>0
                         if ((buffer[0]&0x06) == MQTTQOS1) {
@@ -410,8 +400,6 @@ boolean PubSubClient::loop() {
         }
 		if (onEventPendingList) {
 			onEventStruct *newEvent = onEventPendingList;
-//			char s[1+MQTT_MAX_PACKET_SIZE];
-//			strcpy(s, onEventPendingList->topic);
 			if (newEvent->hasHash) 
 				if (newEvent->hasHash > 1)
 					strcat(newEvent->topic, "/#");
@@ -433,7 +421,7 @@ boolean PubSubClient::loop() {
 				newEvent->topic[newEvent->hasHash-1] = 0;
 				if (newEvent->hasHash > 1)
 					newEvent->topic[newEvent->hasHash-2] = 0;
-				}
+			}
 		}
         return true;
     }
@@ -687,6 +675,20 @@ boolean PubSubClient::connected() {
             }
         }
     }
+	if (!rc)
+		{	
+		onEventStruct *prev = onEventList;
+		if (prev) {                        // must have been connected before
+			if (onEventPendingList) {
+				while (prev->next != NULL)
+					prev = prev->next;
+				prev->next = onEventPendingList;
+			}
+			onEventPendingList = onEventList;
+			onEventList = NULL;
+		}
+	}
+
     return rc;
 }
 
@@ -734,33 +736,15 @@ onEventStruct *newEvent;
 		return rc;
 	if (0 == strlen(topic))
 		return rc;
-//	newEvent = (onEventStruct *)malloc(sizeof(onEventStruct));
-	newEvent = new onEventStruct();
+	newEvent = new onEventStruct((char *)topic, callback, qos);
 	Serial.print("Malloc for onEventStruct size=");Serial.println(sizeof(onEventStruct));
 	Serial.print("Starte Anlage on-Event für topic: ");Serial.println(topic);
 	if (newEvent) {
-//		memset(newEvent, 0, sizeof(onEventStruct));
-		Serial.println("New Event allokiert!");
-		if (NULL == (newEvent->topic = strdup(topic)))
-//			free(newEvent);
+		if (NULL == newEvent->topic)
 			delete newEvent;
 		else {
-			char *hashPos = strchr(newEvent->topic, '#');
-			Serial.println("Topic for New Event allokiert!");
-			if (hashPos != NULL) {
-				newEvent->hasHash = 1 + hashPos - newEvent->topic; 
-				newEvent->topic[newEvent->hasHash-1] = 0;
-				if (newEvent->hasHash > 1)
-					newEvent->topic[newEvent->hasHash-2] = 0;
-			}
-			else
-				newEvent->hasHash = 0;
-			newEvent->hasLevelWildcard = strchr(newEvent->topic, '+') != NULL;
+			Serial.println("New Event allokiert!");
 			rc = true;
-			newEvent->callback = callback;		
-			newEvent->qos = qos;
-			newEvent->next = NULL;
-			Serial.println("Attribute for New Event gesetzt!");
 			onEventStruct *prev = onEventPendingList;
 			Serial.println("Adding Event direct to pendingList!");
 			while (prev && prev->next)
@@ -770,19 +754,34 @@ onEventStruct *newEvent;
 			else
 				onEventPendingList = newEvent;
 			}
-				
 	}
 	return rc;
 }
 
-boolean mqttTopicMatch(char *topic, onEventStruct *matchEvent) {
-char *value = topic;
-char *pattern = matchEvent->topic;
+onEventStruct::onEventStruct(char *t, MQTT_CALLBACK_SIGNATURE, uint8_t qos) {
+	if (topic = strdup(t)) {
+		char *hashPos = strchr(topic, '#');
+		if (hashPos != NULL) {
+			hasHash = 1 + hashPos - topic; 
+			topic[hasHash-1] = 0;
+			if (hasHash > 1)
+				topic[hasHash-2] = 0;
+		}
+		else
+			hasHash = 0;
+		hasLevelWildcard = strchr(topic, '+') != NULL;		
+		this->callback = callback;
+		this->qos = qos;
+		next = NULL;
+	};
+}
 
+boolean onEventStruct::topicMatch(char *value) {
+char *pattern = topic;
   while (*value) {
     if (*value != *pattern) {
        if (0 == *pattern)
-        return matchEvent->hasHash;
+        return hasHash;
        if ('+' == *pattern) {
         pattern++;
         while ((0 != *value) && ('/' != *value))
@@ -798,12 +797,12 @@ char *pattern = matchEvent->topic;
   return (0 == *pattern);
 }
 
-onEventStruct *PubSubClient::getOnEvent(const char *topic) {
-onEventStruct *ret = onEventList;
+onEventStruct *onEventStruct::getOnEvent(const char *topic) {
+onEventStruct *ret = this;
 		while (ret) {
 			Serial.print("Try match: ");Serial.print(topic);Serial.print(" with: ");Serial.println(ret->topic);
 			if (ret->hasLevelWildcard) {
-				if (mqttTopicMatch((char *)topic, ret))
+				if (ret->topicMatch((char *)topic))
 					return ret;
 			}
 			else if (ret->hasHash){
