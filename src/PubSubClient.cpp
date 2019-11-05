@@ -133,20 +133,6 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
 
 boolean PubSubClient::connect(const char *id, const char *user, const char *pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, boolean cleanSession) {
     if (!connected()) {
-/*
-			{	
-			onEventStruct *prev = onEventList;
-			if (prev) {                        // must have been connected before
-				if (onEventPendingList) {
-					while (prev->next != NULL)
-						prev = prev->next;
-					prev->next = onEventPendingList;
-				}
-				onEventPendingList = onEventList;
-				onEventList = NULL;
-				}
-			}
-*/
 		int result = 0;
 
         if (domain != NULL) {
